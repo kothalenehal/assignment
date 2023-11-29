@@ -37,7 +37,7 @@ export default function Category(props) {
                     <img
                     src={product.image}
                     alt={product.image}
-                    className="object-cover object-center w-full h-full lg:h-full lg:w-full"
+                    className="object-contain object-center w-full h-full lg:h-full lg:w-full"
                     />
                 </div>
                 <h3 className="mt-4 text-sm text-gray-700">{product.title}</h3>

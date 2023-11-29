@@ -1,10 +1,21 @@
 'use client'
+import RatingBar from '@/components/shared/RatingBar';
 import Image from 'next/image'
 import { useEffect, useState } from 'react';
+import { useUserCartStore } from '@/stores/cart';
+import * as dayjs from "dayjs"
+import AlertComponent from '@/components/shared/Alert';
+import { ScreenLoader } from '@/components/shared/Loading';
 
 export default function Page({ params }) {
 
   const [product, setProduct] = useState()
+
+  const [quantity, setQuantity] = useState(1)
+
+  const [message, setMessage] = useState()
+
+  const reloadCartItems = useUserCartStore(state => state.reloadItems)
 
   useEffect(() => { 
     fetchProduct()
@@ -18,13 +29,56 @@ export default function Page({ params }) {
             })
   }
 
+  async function addToCart() { 
+    
+    const body = {
+      userId: process.env.NEXT_PUBLIC_USERID,
+      date: dayjs().format("YYYY-MM-DD"),
+      products: [{
+        productId: product.id,
+        quantity: quantity
+      }]
+    }
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/carts`, {
+      method: "POST",
+      body: JSON.stringify(body)
+    })
+
+    showMessage("Added into cart")
+
+    reloadCartItems()
+
+  }
+
+  function increment() { 
+    var value = quantity + 1
+    if (value > 5) { 
+      value = 5
+    }
+    setQuantity(value)
+  }
+
+  function decrement() { 
+    var value = quantity - 1
+    if (value <= 1) { 
+      value = 1
+    }
+    setQuantity(value)
+  }
+
+  function showMessage(msg) { 
+    setMessage(msg)
+    setTimeout(() => {
+      setMessage(undefined)
+    }, 2500)
+  }
+
   return (
     <div className="w-full h-full px-[32px] py-[32px]">
 
       { !product &&
-        <div>
-          <span>Please wait...</span>
-        </div>
+        <ScreenLoader />
       }
 
       { product &&
@@ -33,7 +87,7 @@ export default function Page({ params }) {
                     <img
                     src={product.image}
                     alt={product.image}
-                    className="object-cover object-center w-full h-full lg:h-full lg:w-full"
+                    className="object-contain object-center w-full h-full lg:h-full lg:w-full"
                     />
           </div>
 
@@ -49,12 +103,42 @@ export default function Page({ params }) {
             <p className="text-base text-gray-900">{product.description}</p>
             <p className="text-3xl tracking-tight text-gray-900">${product.price}</p>
 
+
+            <div className='flex flex-row items-center space-x-4'>
+              <RatingBar value={product.rating.rate} />
+              <span className='flex flex-row space-x-1 text-sm'>
+                <span className='text-indigo-500'>{product.rating.count}</span>
+                <span className='text-gray-500'>Reviews</span>
+              </span>
+            </div>
+
+            <div className='flex flex-row pt-[32px] items-center space-x-3'>
+              <button onClick={() => decrement()} className='text-indigo-500'>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+              <span className='text-xl font-bold text-gray-700'>{ quantity }</span>
+              <button onClick={() => increment()} className='text-indigo-500'>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+            </div>
+
+            { message &&
+              <AlertComponent message={message} handleClose={() => setMessage(undefined)} />
+            }
+
             <button
-                type="submit"
+              type="button"
+              onClick={() => addToCart()}
                 className="flex items-center justify-center w-full px-8 py-3 mt-10 text-base font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               >
                 Add to bag
-              </button>
+            </button>
+            
+            
 
           </div>
 
